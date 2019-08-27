@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using Microsoft.AspNetCore.SignalR;
+using System;
 using System.Threading.Tasks;
 
 namespace Microsoft.Azure.SignalR.Samples.ChatRoom
@@ -34,6 +35,8 @@ namespace Microsoft.Azure.SignalR.Samples.ChatRoom
         public async Task JoinGroup(string groupName)
         {
             await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
+            await Clients.All.SendAsync("joinedGroup", "joinedGroup", groupName);
+            Console.WriteLine($"join group {groupName}");
         }
 
         public async Task LeaveGroup(string groupName)

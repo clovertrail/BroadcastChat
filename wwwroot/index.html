@@ -106,14 +106,22 @@
                 };
                 // Create a function that the hub can call to broadcast messages.
                 connection.on('broadcastMessage', messageCallback);
+                connection.on('joinedGroup', messageCallback);
                 connection.on('echo', messageCallback);
                 connection.on('OOMCallback', simulatedOOMCallback);
+
                 connection.onclose(onConnectionError);
             }
 
             function onConnected(connection) {
                 console.log('connection started');
                 connection.send('broadcastMessage', '_SYSTEM_', username + ' JOINED');
+                connection.send('JoinGroup', 'RecieveBuyerBookArbitrage');
+                connection.send('JoinGroup', 'RecieveExchangeListSmartArbitrage');
+                connection.send('JoinGroup', 'RecieveProfitIndicatorArbitrage');
+                connection.send('JoinGroup', 'RecieveProviderMarketDataArbitrage');
+                connection.send('JoinGroup', 'RecieveSellerBookArbitrage');
+                connection.send('JoinGroup', 'SetTime');
                 document.getElementById('sendmessage').addEventListener('click', function (event) {
                     // Call the broadcastMessage method on the hub.
                     if (messageInput.value) {

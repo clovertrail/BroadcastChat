@@ -13,10 +13,9 @@ namespace Microsoft.Azure.SignalR.Samples.ChatRoom
         private HubLifetimeManager<THub> _internalLifetimeManager;
         private System.Timers.Timer _timer;
         private bool _started;
-        private string[] _dataFile = { "RecieveExchangeListSmartArbitrage.json", "RecieveProfitIndicatorArbitrage.json" };
-        private List<string> _data = new List<string>();
         private string _recvMethod = "OOMCallback";
         private IHubCallerClients _callerClients;
+        private Dictionary<string, string> _groupData = new Dictionary<string, string>();
 
         public PersistentLifetimeManager(HubLifetimeManager<THub> hubLifetimeManager)
         {
@@ -46,13 +45,14 @@ namespace Microsoft.Azure.SignalR.Samples.ChatRoom
 
         private void LoadData()
         {
-            foreach (var df in _dataFile)
+            foreach (string p in Directory.EnumerateFiles("data", "*.json"))
             {
-                if (File.Exists(df))
-                {
-                    _data.Add(File.ReadAllText(df));
-                    Console.WriteLine($"load data from {df}");
-                }
+                var f = Path.GetFileName(p);
+                var dot = f.IndexOf(".");
+                var grp = f.Substring(0, dot);
+                var value = File.ReadAllText(p);
+                _groupData.Add(grp, value);
+                Console.WriteLine($"load data from {f}");
             }
         }
 
@@ -60,14 +60,28 @@ namespace Microsoft.Azure.SignalR.Samples.ChatRoom
         {
             if (_started)
             {
+                /*
                 foreach (var d in _data)
                 {
                     if (_callerClients != null)
                     {
                         await _callerClients.All.SendAsync(_recvMethod, new[] { "OOMCheck", d });
                     }
-                    //await _internalLifetimeManager.SendAllAsync(_recvMethod, new[] { "OOMCheck", d});
-                    //Console.WriteLine($"send data {d.Length}");
+                }
+                */
+                string key = null, value = null;
+                foreach (var d in _groupData)
+                {
+                    if (_callerClients != null)
+                    {
+                        key = d.Key;
+                        value = d.Value;
+                        await _callerClients.Group(d.Key).SendAsync(_recvMethod, new[] { d.Key, d.Value});
+                    }
+                }
+                if (key != null && value != null)
+                {
+                    await _callerClients.All.SendAsync(_recvMethod, new[] { key, value});
                 }
             }
         }
