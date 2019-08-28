@@ -79,7 +79,8 @@
                 }
                 return entry;
             }
-
+            var msgCounter = 0;
+            var totalMsgSize = 0;
             function bindConnectionMessage(connection) {
                 var messageCallback = function(name, message) {
                     if (!message) return;
@@ -93,16 +94,26 @@
                     messageBox.scrollTop = messageBox.scrollHeight;
                 };
                 var simulatedOOMCallback = function (name, message) {
+                    msgCounter++;
+                    totalMsgSize += String(message).length;
                     console.log("received OOMCallback");
                     if (!message) return;
-                    // Html encode display name and message.
-                    var encodedName = name;
-                    var encodedMsg = message.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-                    var messageEntry = createMessageEntry(encodedName, "received message size: " + String(encodedMsg).length);
+                    if (msgCounter % 256 == 0)
+                    {
+                        var today = new Date();
+                        var date = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
+                        var time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+                        var dateTime = date + ' ' + time;
 
-                    var messageBox = document.getElementById('messages');
-                    messageBox.appendChild(messageEntry);
-                    messageBox.scrollTop = messageBox.scrollHeight;
+                        // Html encode display name and message.
+                        var encodedName = name;
+                        // var encodedMsg = message.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                        var messageEntry = createMessageEntry(dateTime, "group: " + encodedName + " count: " + msgCounter + " size: " + totalMsgSize);
+
+                        var messageBox = document.getElementById('messages');
+                        messageBox.appendChild(messageEntry);
+                        messageBox.scrollTop = messageBox.scrollHeight;
+                    }
                 };
                 // Create a function that the hub can call to broadcast messages.
                 connection.on('broadcastMessage', messageCallback);

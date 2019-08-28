@@ -9,7 +9,8 @@ namespace Microsoft.Azure.SignalR.Samples.ChatRoom
 {
     public class PersistentLifetimeManager<THub> where THub : Hub
     {
-        private static readonly TimeSpan Interval = TimeSpan.FromMilliseconds(100);
+        private const string SendingInterval = "SendingInterval";
+        private TimeSpan Interval;
         private HubLifetimeManager<THub> _internalLifetimeManager;
         private System.Timers.Timer _timer;
         private bool _started;
@@ -19,6 +20,16 @@ namespace Microsoft.Azure.SignalR.Samples.ChatRoom
 
         public PersistentLifetimeManager(HubLifetimeManager<THub> hubLifetimeManager)
         {
+            var intervalStr = Environment.GetEnvironmentVariable(SendingInterval);
+            if (intervalStr != null)
+            {
+                var intervalInt = Convert.ToInt32(intervalStr);
+                Interval = TimeSpan.FromMilliseconds(intervalInt);
+            }
+            else
+            {
+                Interval = TimeSpan.FromMilliseconds(100);
+            }
             _internalLifetimeManager = hubLifetimeManager;
             _timer = new System.Timers.Timer(100);
             _timer.Elapsed += async (sender, e) =>
@@ -60,15 +71,6 @@ namespace Microsoft.Azure.SignalR.Samples.ChatRoom
         {
             if (_started)
             {
-                /*
-                foreach (var d in _data)
-                {
-                    if (_callerClients != null)
-                    {
-                        await _callerClients.All.SendAsync(_recvMethod, new[] { "OOMCheck", d });
-                    }
-                }
-                */
                 string key = null, value = null;
                 foreach (var d in _groupData)
                 {
@@ -76,12 +78,12 @@ namespace Microsoft.Azure.SignalR.Samples.ChatRoom
                     {
                         key = d.Key;
                         value = d.Value;
-                        await _callerClients.Group(d.Key).SendAsync(_recvMethod, new[] { d.Key, d.Value});
+                        await _callerClients.Group(d.Key).SendCoreAsync(_recvMethod, new[] { d.Key, d.Value });
                     }
                 }
                 if (key != null && value != null)
                 {
-                    await _callerClients.All.SendAsync(_recvMethod, new[] { key, value});
+                    await _callerClients.All.SendCoreAsync(_recvMethod, new[] { key, value });
                 }
             }
         }
